@@ -49,6 +49,7 @@ else:
             f"The word is '{word}'. Listen to this student spelling it letter-by-letter. Tell them if they are correct. If not, show the correct spelling.",
             {"mime_type": "audio/wav", "data": audio_data.read()}
         ])
+        ])
         st.info(response.text)
         
         if st.button("Next Word"):
