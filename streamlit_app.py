@@ -7,13 +7,12 @@ import io
 st.set_page_config(page_title="Al-Hussan Spelling Bee", page_icon="🏫")
 st.markdown("<div style='text-align: center;'><h3>🏫 AL-HUSSAN MODEL SCHOOL FOR BOYS</h3><h1>Spelling Bee Practice</h1></div>", unsafe_allow_html=True)
 
-# --- 2. FORCED API CONFIGURATION ---
-# This ensures the app stops immediately if the key is missing or incorrectly named
+# --- 2. API CONFIGURATION ---
 if "GOOGLE_API_KEY" in st.secrets:
-    api_key = st.secrets["GOOGLE_API_KEY"]
-    genai.configure(api_key=api_key)
+    # This line tells the app to use the correct 'v1beta' version
+    genai.configure(api_key=st.secrets["GOOGLE_API_KEY"], transport='grpc')
 else:
-    st.error("❌ Critical Error: 'GOOGLE_API_KEY' not found in Streamlit Secrets. Please check your spelling in the Secrets tab.")
+    st.error("❌ API Key Missing in Secrets!")
     st.stop()
 
 # --- 3. SESSION STATE ---
@@ -24,9 +23,8 @@ if "current_index" not in st.session_state:
 
 # --- 4. APP INTERFACE ---
 if not st.session_state.words:
-    st.write("Add all the words you need to practice in the box below, separate them with a space or a comma.")
-    user_input = st.text_area("Word List", placeholder="example: atmosphere, equation, logic...")
-    
+    st.write("Add your words below, separated by commas.")
+    user_input = st.text_area("Word List", placeholder="apple, banana, geography...")
     if st.button("START PRACTICING", use_container_width=True):
         if user_input:
             st.session_state.words = [w.strip() for w in user_input.replace(',', ' ').split() if w.strip()]
@@ -45,10 +43,12 @@ else:
 
     if audio_data:
         try:
-            # We explicitly define the stable model here
-            model = genai.GenerativeModel("models/gemini-1.5-flash-latest")
+            # IMPORTANT: We explicitly call the model using the 'v1beta' engine
+            model = genai.GenerativeModel(model_name="gemini-1.5-flash")
+            
+            # This updated call specifically handles audio evaluation
             response = model.generate_content([
-                f"The word is '{word}'. Listen to this student spelling it letter-by-letter. Tell them if they are correct. If not, show the correct spelling.",
+                f"The word is '{word}'. Check if the student spelled it correctly in the audio. Be encouraging!",
                 {"mime_type": "audio/wav", "data": audio_data.read()}
             ])
             st.info(response.text)
@@ -60,7 +60,7 @@ else:
                 st.session_state.current_index += 1
                 st.rerun()
             else:
-                st.success("You finished the list!")
+                st.success("Practice Finished!")
                 if st.button("Restart"):
                     st.session_state.words = []
                     st.session_state.current_index = 0
