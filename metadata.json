@@ -1,0 +1,7 @@
+{
+  "name": "Al-Hussan Spelling Bee",
+  "description": "A spelling practice tool for Al-Hussan Model School students using Gemini for pronunciation and feedback.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
