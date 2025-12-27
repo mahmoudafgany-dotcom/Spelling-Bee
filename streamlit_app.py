@@ -3,20 +3,15 @@ import google.generativeai as genai
 from gtts import gTTS
 import io
 
-# --- 1. BRANDING & UI ---
+# --- 1. BRANDING ---
 st.set_page_config(page_title="Al-Hussan Spelling Bee", page_icon="🏫")
 
-# Header Matching your Design
-st.markdown("<div style='background-color: #1a3a8a; padding: 20px; border-radius: 10px; text-align: center;'>"
-            "<h2 style='color: white; margin: 0;'>Al-Hussan Model School for Boys</h2>"
-            "<p style='color: white;'>Spelling Bee Practice</p></div>", unsafe_allow_html=True)
+st.markdown("<div style='text-align: center;'><h3>🏫 AL-HUSSAN MODEL SCHOOL FOR BOYS</h3><h1>Spelling Bee Practice</h1></div>", unsafe_allow_html=True)
 
-# --- 2. API SETUP ---
-# You will add your API Key in the Streamlit "Secrets" tab
+# --- 2. API CONFIGURATION ---
+# This looks for your key in the Streamlit Secrets
 if "GOOGLE_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-else:
-    st.warning("Please add your GOOGLE_API_KEY in the Streamlit App Settings (Secrets).")
 
 # --- 3. SESSION STATE ---
 if "words" not in st.session_state:
@@ -24,20 +19,17 @@ if "words" not in st.session_state:
 if "current_index" not in st.session_state:
     st.session_state.current_index = 0
 
-# --- 4. PAGE 1: READY TO PRACTICE? ---
+# --- 4. INTERFACE ---
 if not st.session_state.words:
-    st.markdown("<h3 style='text-align: center;'>Ready to Practice?</h3>", unsafe_allow_html=True)
     st.write("Add all the words you need to practice in the box below, separate them with a space or a comma.")
-    
-    user_input = st.text_area("Input words here...", placeholder="example: apple, banana, geography, science")
+    user_input = st.text_area("Word List", placeholder="example: atmosphere, equation, logic...")
     
     if st.button("START PRACTICING", use_container_width=True):
         if user_input:
             st.session_state.words = [w.strip() for w in user_input.replace(',', ' ').split() if w.strip()]
             st.rerun()
-
-# --- 5. PAGE 2: PRACTICE SESSION ---
 else:
+    # Practice Page
     word = st.session_state.words[st.session_state.current_index]
     st.subheader(f"Word {st.session_state.current_index + 1} of {len(st.session_state.words)}")
 
@@ -54,7 +46,7 @@ else:
     if audio_data:
         model = genai.GenerativeModel("gemini-1.5-flash")
         response = model.generate_content([
-            f"The word is '{word}'. Check if this student spelled it correctly in the audio.",
+            f"The word is '{word}'. Listen to this student spelling it letter-by-letter. Tell them if they are correct. If not, show the correct spelling.",
             {"mime_type": "audio/wav", "data": audio_data.read()}
         ])
         st.info(response.text)
@@ -64,11 +56,11 @@ else:
                 st.session_state.current_index += 1
                 st.rerun()
             else:
-                st.success("Practice Finished!")
+                st.success("You finished the list!")
                 if st.button("Restart"):
                     st.session_state.words = []
                     st.session_state.current_index = 0
                     st.rerun()
 
-# --- 6. FOOTER ---
+# --- 5. FOOTER ---
 st.markdown("<br><hr><center>Developed by: Mahmoud Afgany</center>", unsafe_allow_html=True)
