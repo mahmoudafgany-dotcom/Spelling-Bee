@@ -11,7 +11,7 @@ st.markdown("<div style='text-align: center;'><h3>🏫 AL-HUSSAN MODEL SCHOOL FO
 # --- 2. API CONFIGURATION ---
 # This looks for your key in the Streamlit Secrets
 if "GOOGLE_API_KEY" in st.secrets:
-    genai.configure(api_key=st.secrets["AIzaSyDJ8nEte7RofS9BLe0_D5CAcZsVO8kiDrY"])
+    genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 
 # --- 3. SESSION STATE ---
 if "words" not in st.session_state:
