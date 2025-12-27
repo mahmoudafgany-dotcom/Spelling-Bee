@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Modality, Type } from "@google/genai";
 import { SpellingFeedback } from "../types";
 
@@ -37,7 +36,7 @@ export const checkSpelling = async (targetWord: string, audioBase64: string, mim
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
-    // Using gemini-3-flash-preview as it supports audio file input via generateContent
+    // Using gemini-3-flash-preview as it is standard for multimodal reasoning via generateContent
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: {
