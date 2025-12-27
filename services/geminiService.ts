@@ -7,7 +7,6 @@ import { SpellingFeedback } from "../types";
  */
 export const pronounceWord = async (word: string): Promise<string | null> => {
   try {
-    // Always initialize a fresh client instance before API calls
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
     const response = await ai.models.generateContent({
@@ -38,31 +37,31 @@ export const checkSpelling = async (targetWord: string, audioBase64: string, mim
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
-    const prompt = `
-      You are a Spelling Bee Judge for Al-Hussan Model School.
-      The student was asked to spell the word: "${targetWord}".
-      Listen to the audio. The student should be spelling the word letter-by-letter.
-      
-      Tasks:
-      1. Transcribe the letters spoken.
-      2. Check if the sequence of letters matches the correct spelling of "${targetWord}".
-      3. Provide encouraging feedback.
-      
-      If they say the word first and then spell it, that is fine.
-      If they spell it incorrectly, identify exactly where they went wrong.
-    `;
-
+    // Using gemini-3-flash-preview as it supports audio file input via generateContent
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: {
         parts: [
           {
             inlineData: {
-              mimeType: mimeType, // Use the actual mimeType from the recording
+              mimeType: mimeType || 'audio/webm',
               data: audioBase64
             }
           },
-          { text: prompt }
+          { 
+            text: `
+              You are a Spelling Bee Judge for Al-Hussan Model School.
+              The student was asked to spell the word: "${targetWord}".
+              Listen to the audio. The student should be spelling the word letter-by-letter.
+              
+              Tasks:
+              1. Transcribe the letters spoken.
+              2. Check if the sequence of letters matches the correct spelling of "${targetWord}".
+              3. Provide encouraging feedback.
+              
+              Return the result in JSON format with: isCorrect (boolean), heardSpelling (string), and feedbackText (string).
+            ` 
+          }
         ]
       },
       config: {
@@ -94,8 +93,8 @@ export const checkSpelling = async (targetWord: string, audioBase64: string, mim
     console.error("Spelling Check Error:", error);
     return {
       isCorrect: false,
-      heardSpelling: "System Error",
-      feedbackText: "I'm sorry, I couldn't process your spelling. Please check your connection and try again."
+      heardSpelling: "Could not hear clearly",
+      feedbackText: "I'm sorry, I had trouble processing that audio. Please try spelling the word again clearly."
     };
   }
 };
