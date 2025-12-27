@@ -9,8 +9,8 @@ st.markdown("<div style='text-align: center;'><h3>🏫 AL-HUSSAN MODEL SCHOOL FO
 
 # --- 2. API CONFIGURATION ---
 if "GOOGLE_API_KEY" in st.secrets:
-    # This line tells the app to use the correct 'v1beta' version
-    genai.configure(api_key=st.secrets["GOOGLE_API_KEY"], transport='grpc')
+    # Use the most basic configuration to avoid version conflicts
+    genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 else:
     st.error("❌ API Key Missing in Secrets!")
     st.stop()
@@ -43,16 +43,17 @@ else:
 
     if audio_data:
         try:
-            # IMPORTANT: We explicitly call the model using the 'v1beta' engine
-            model = genai.GenerativeModel(model_name="gemini-1.5-flash")
+            # FIX: We use the most specific model path available
+            # This 'models/gemini-1.5-flash' path is the official one for stable v1
+            model = genai.GenerativeModel('models/gemini-1.5-flash')
             
-            # This updated call specifically handles audio evaluation
             response = model.generate_content([
-                f"The word is '{word}'. Check if the student spelled it correctly in the audio. Be encouraging!",
+                f"The word is '{word}'. Listen to this student spelling it letter-by-letter. Tell them if they are correct. If not, show the correct spelling.",
                 {"mime_type": "audio/wav", "data": audio_data.read()}
             ])
             st.info(response.text)
         except Exception as e:
+            # This will show us if it's still a 404 or a different error
             st.error(f"AI Connection Error: {e}")
         
         if st.button("Next Word"):
