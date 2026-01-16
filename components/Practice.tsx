@@ -2,11 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Mic, Volume2, ArrowRight, CheckCircle, XCircle, BookOpen, MessageSquareQuote } from 'lucide-react';
 import { pronounceWord, pronounceSentence, checkSpelling, getWordMetadata } from '../services/geminiService';
 import { blobToBase64, playAudioContent } from '../utils/audio';
-import { SpellingFeedback, WordMetadata } from '../types';
+import { SpellingFeedback, WordMetadata, WordResult } from '../types';
 
 interface PracticeProps {
   words: string[];
-  onFinish: () => void;
+  onFinish: (results: WordResult[]) => void;
 }
 
 const Practice: React.FC<PracticeProps> = ({ words, onFinish }) => {
@@ -17,6 +17,7 @@ const Practice: React.FC<PracticeProps> = ({ words, onFinish }) => {
   const [isPlayingSentence, setIsPlayingSentence] = useState(false);
   const [metadata, setMetadata] = useState<WordMetadata | null>(null);
   const [feedback, setFeedback] = useState<SpellingFeedback | null>(null);
+  const [results, setResults] = useState<WordResult[]>([]);
   
   // Cache state to store audio data associated with specific text
   const [audioCache, setAudioCache] = useState<{ text: string; data: string } | null>(null);
@@ -26,7 +27,8 @@ const Practice: React.FC<PracticeProps> = ({ words, onFinish }) => {
   const chunksRef = useRef<Blob[]>([]);
 
   const currentWord = words[currentIndex];
-  const isFinished = currentIndex >= words.length;
+  // Calculate isFinished based on results length to prevent premature rendering
+  const isFinished = results.length === words.length && words.length > 0;
 
   useEffect(() => {
     if (!isFinished && currentWord) {
@@ -38,7 +40,6 @@ const Practice: React.FC<PracticeProps> = ({ words, onFinish }) => {
     setMetadata(null);
     setFeedback(null);
     // Don't clear cache explicitly here; let handlePronounce overwrite it if key doesn't match.
-    // This prevents race conditions with stale state in closures.
     handlePronounce(word);
     
     try {
@@ -167,19 +168,29 @@ const Practice: React.FC<PracticeProps> = ({ words, onFinish }) => {
   };
 
   const handleNext = () => {
-    setFeedback(null);
+    // Record the result of the current word
+    const currentResult: WordResult = {
+      word: currentWord,
+      isCorrect: feedback?.isCorrect ?? false,
+      userSpelling: feedback?.heardSpelling ?? '',
+    };
+    
+    const updatedResults = [...results, currentResult];
+    setResults(updatedResults);
+
     if (currentIndex < words.length - 1) {
       setCurrentIndex(prev => prev + 1);
+      setFeedback(null);
     } else {
-      onFinish();
+      onFinish(updatedResults);
     }
   };
 
   if (isFinished) {
     return (
       <div className="flex flex-col items-center justify-center p-12 text-center animate-fade-in">
-        <CheckCircle className="w-16 h-16 text-green-500 mb-4" />
-        <h3 className="text-2xl font-bold">Practice Session Finished!</h3>
+        <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+        <h3 className="text-2xl font-bold text-gray-700">Finalizing Results...</h3>
       </div>
     );
   }

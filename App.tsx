@@ -3,24 +3,28 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import Home from './components/Home';
 import Practice from './components/Practice';
-import { AppView } from './types';
+import Completed from './components/Completed';
+import { AppView, WordResult } from './types';
 import { RotateCcw } from 'lucide-react';
 
 const App: React.FC = () => {
   const [view, setView] = useState<AppView>(AppView.HOME);
   const [words, setWords] = useState<string[]>([]);
+  const [lastResults, setLastResults] = useState<WordResult[]>([]);
 
   const startPractice = (wordList: string[]) => {
     setWords(wordList);
     setView(AppView.PRACTICE);
   };
 
-  const finishPractice = () => {
+  const finishPractice = (results: WordResult[]) => {
+    setLastResults(results);
     setView(AppView.COMPLETED);
   };
 
   const restart = () => {
     setWords([]);
+    setLastResults([]);
     setView(AppView.HOME);
   };
 
@@ -45,17 +49,7 @@ const App: React.FC = () => {
         )}
 
         {view === AppView.COMPLETED && (
-          <div className="flex flex-col items-center space-y-6 mt-10 animate-fade-in px-6 text-center">
-            <h2 className="text-3xl font-bold text-blue-900">Practice Complete!</h2>
-            <p className="text-xl text-gray-600">You have finished your word list. Excellent work!</p>
-            <button
-              onClick={restart}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-transform hover:scale-105"
-            >
-              <RotateCcw className="w-5 h-5" />
-              Practice New List
-            </button>
-          </div>
+          <Completed results={lastResults} onRestart={restart} />
         )}
       </main>
 
