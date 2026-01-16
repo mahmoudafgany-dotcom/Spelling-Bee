@@ -16,8 +16,21 @@ export interface WordResult {
   userSpelling: string;
 }
 
+export interface LetterStatus {
+  letter: string;
+  status: 'correct' | 'incorrect' | 'missing' | 'extra';
+}
+
+export interface WordMetadata {
+  partOfSpeech: string;
+  definition: string;
+  sentence: string;
+}
+
 export interface SpellingFeedback {
   isCorrect: boolean;
+  isSilent: boolean;
   heardSpelling: string;
+  letterAnalysis: LetterStatus[];
   feedbackText: string;
 }
