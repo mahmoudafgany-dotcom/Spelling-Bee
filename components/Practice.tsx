@@ -18,6 +18,10 @@ const Practice: React.FC<PracticeProps> = ({ words, onFinish }) => {
   const [metadata, setMetadata] = useState<WordMetadata | null>(null);
   const [feedback, setFeedback] = useState<SpellingFeedback | null>(null);
   
+  // Cache state to store audio data associated with specific text
+  const [audioCache, setAudioCache] = useState<{ text: string; data: string } | null>(null);
+  const [sentenceCache, setSentenceCache] = useState<{ text: string; data: string } | null>(null);
+  
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
 
@@ -33,6 +37,8 @@ const Practice: React.FC<PracticeProps> = ({ words, onFinish }) => {
   const handleLoadWord = async (word: string) => {
     setMetadata(null);
     setFeedback(null);
+    // Don't clear cache explicitly here; let handlePronounce overwrite it if key doesn't match.
+    // This prevents race conditions with stale state in closures.
     handlePronounce(word);
     
     try {
@@ -45,10 +51,25 @@ const Practice: React.FC<PracticeProps> = ({ words, onFinish }) => {
 
   const handlePronounce = async (word: string) => {
     if (isPlayingAudio || isPlayingSentence) return;
+
+    // Check if we have valid cached audio for this word
+    if (audioCache && audioCache.text === word) {
+      setIsPlayingAudio(true);
+      try {
+        await playAudioContent(audioCache.data);
+      } catch (err) {
+        console.error("Playback error", err);
+      } finally {
+        setIsPlayingAudio(false);
+      }
+      return;
+    }
+
     setIsPlayingAudio(true);
     try {
       const audioData = await pronounceWord(word);
       if (audioData) {
+        setAudioCache({ text: word, data: audioData });
         await playAudioContent(audioData);
       }
     } catch (err) {
@@ -59,11 +80,27 @@ const Practice: React.FC<PracticeProps> = ({ words, onFinish }) => {
   };
 
   const handlePlaySentence = async () => {
-    if (!metadata?.sentence || isPlayingSentence || isPlayingAudio) return;
+    const sentence = metadata?.sentence;
+    if (!sentence || isPlayingAudio || isPlayingSentence) return;
+    
+    // Check if we have valid cached audio for this sentence
+    if (sentenceCache && sentenceCache.text === sentence) {
+      setIsPlayingSentence(true);
+      try {
+        await playAudioContent(sentenceCache.data);
+      } catch (err) {
+        console.error("Playback error", err);
+      } finally {
+        setIsPlayingSentence(false);
+      }
+      return;
+    }
+
     setIsPlayingSentence(true);
     try {
-      const audioData = await pronounceSentence(metadata.sentence);
+      const audioData = await pronounceSentence(sentence);
       if (audioData) {
+        setSentenceCache({ text: sentence, data: audioData });
         await playAudioContent(audioData);
       }
     } catch (err) {
